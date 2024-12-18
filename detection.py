@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-import math
+import random
+import time
 
 # Function to initialise the camera
 def initialise_camera():
@@ -16,18 +17,28 @@ def initialise_camera():
     return camera
 
 # Function to estimate pose of detected ArUco markers
-def estimate_pose(frame, corners, ids, camera_matrix, distortion_coeffs, marker_length):
+def estimate_pose(frame, corners, ids, camera_matrix, distortion_coeffs, marker_length, altitude):
+    detected_markers = []
+    looking_for = random.randint(100, 999)  # Simulate a random marker to look for
+
     # Loop through all detected markers
     for corner, marker_id in zip(corners, ids):
         rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(
             corner, marker_length, camera_matrix, distortion_coeffs
         )
-        
         # Draw axis for the detected marker
         cv2.aruco.drawAxis(frame, camera_matrix, distortion_coeffs, rvec, tvec, 0.1)
-        
-        # Print the marker's translation vector
-        print(f"Marker ID {marker_id}: Position (x, y, z) -> {tvec[0][0]}")
+
+        # Collect detected marker IDs
+        detected_markers.append(marker_id[0])
+        print(f"MARKER POSITION: x={round(tvec[0][0][0], 2)}, y={round(tvec[0][0][1], 2)}, z={round(tvec[0][0][2], 2)}")
+    
+    # Simulate dummy output
+    print("DETECTED ARUCO MARKERS: {}/6".format(len(detected_markers)))
+    print(f"LOCATED IDs: {', '.join(map(str, detected_markers))}")
+    print(f"LOOKING FOR MARKER: {looking_for}")
+    print(f"ALTITUDE: {round(altitude + random.uniform(-0.05, 0.05), 2)} m\n")
+
     return frame
 
 # Main script
@@ -49,9 +60,9 @@ if __name__ == "__main__":
         distortion_coeffs = np.array([0.1, -0.05, 0, 0])  # Example values
 
         # Marker size in meters (adjust to your marker's actual size)
-        marker_length = 0.15  # 15 cm
+        marker_length = 0.10  # 10 cm
 
-        print("Starting ArUco detection. Press 'q' to quit.")
+        altitude = 4.5  # Starting altitude
 
         while True:
             # Capture frame from the camera
@@ -69,10 +80,11 @@ if __name__ == "__main__":
             # If markers are detected
             if ids is not None:
                 frame = cv2.aruco.drawDetectedMarkers(frame, corners, ids)
-                frame = estimate_pose(frame, corners, ids, camera_matrix, distortion_coeffs, marker_length)
-                print(f"Detected IDs: {ids.flatten()}")
+                frame = estimate_pose(frame, corners, ids, camera_matrix, distortion_coeffs, marker_length, altitude)
             else:
                 print("No markers detected.")
+                print(f"DETECTED ARUCO MARKERS: 0/6")
+                print("LOOKING FOR MARKER: {}\n".format(random.randint(100, 999)))
 
             # Display the frame
             cv2.imshow("ArUco Detection", frame)
